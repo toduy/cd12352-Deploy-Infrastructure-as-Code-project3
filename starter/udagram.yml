@@ -14,7 +14,7 @@ Resources:
       GroupDescription: !Ref ProjectName
       VpcId:
         Fn::ImportValue:
-          !Sub "${ProjectName}-vpc-id" # TODO: Export value
+          !Sub "${ProjectName}-vpc-id"
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
@@ -25,24 +25,30 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties: 
       LaunchTemplateData:
+        ImageId: ami-0e2c8caa4b6378d8c # ubuntu 24
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        InstanceType: t2.micro
         UserData:
           Fn::Base64: |
             #!/bin/bash
             apt-get update -y
             sudo apt-get install nginx -y
             service nginx start
+        IamInstanceProfile:
+          Name: !Ref InstanceProfile
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
       - Fn::ImportValue: 
-          !Sub "${ProjectName}-private-subnets"
+          !Sub "${ProjectName}-PRIV-NET"
       LaunchTemplate:
         LaunchTemplateId: !Ref WebAppLaunchTemplate
         Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
-      MinSize: '1'
-      DesiredCapacity: !Ref AsgDesiredCapacity
-      MaxSize: '6'
+      MinSize: '4'
+      MaxSize: '4'
+      DesiredCapacity: '4'
       TargetGroupARNs:
       - Ref: TargetGroup
   LoadBalancerSecurityGroup:
@@ -101,3 +107,49 @@ Resources:
       VpcId: 
         Fn::ImportValue:
           Fn::Sub: "${ProjectName}-vpc-id"
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "dtq-udagram-bucket"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: true
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref ProjectName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: 'Allow'
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              Resource:
+                - !GetAtt S3Bucket.Arn
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref IAMRole
