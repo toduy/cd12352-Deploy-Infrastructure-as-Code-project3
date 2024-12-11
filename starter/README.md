@@ -1,5 +1,5 @@
 # CD12352 - Infrastructure as Code Project Solution
-# [YOUR NAME HERE]
+# TO QUANG DUY
 
 ## Spin up instructions
 TODO

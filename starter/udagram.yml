@@ -5,9 +5,44 @@ Parameters:
   ProjectName:
     Type: String
     Description: Project name used for tagging resources
+  SshKeyName:
+    Type: String
+    Description: SSH key name
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name
 
 Resources:
   # Add your resources here
+  # EC 2 server as a bastion host
+  Bastion:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref SshKeyName
+      ImageId: ami-0e2c8caa4b6378d8c # ubuntu 24
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      # Use either any public subnet
+      SubnetId:
+        Fn::ImportValue: !Sub "${ProjectName}-public-subnet1"
+      Tags:
+        - Key: Name
+          Value: "Bastion Host"
+
+  # The Security Group of the Bastion Host
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow public SSH access to the bastion host
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-vpc-id"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -17,6 +52,10 @@ Resources:
           !Sub "${ProjectName}-vpc-id"
       SecurityGroupIngress:
       - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        SourceSecurityGroupId: !Ref BastionSecurityGroup
+      - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
         SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
@@ -25,6 +64,7 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties: 
       LaunchTemplateData:
+        KeyName: !Ref SshKeyName
         ImageId: ami-0e2c8caa4b6378d8c # ubuntu 24
         SecurityGroupIds:
           - !Ref SecurityGroup
@@ -110,7 +150,7 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "dtq-udagram-bucket"
+      BucketName: !Ref S3BucketName
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled

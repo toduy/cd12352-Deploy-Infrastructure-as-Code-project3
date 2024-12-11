@@ -2,5 +2,13 @@
 	{
 		"ParameterKey": "ProjectName",
 		"ParameterValue": "Udagram"
+	},
+	{
+		"ParameterKey": "SshKeyName",
+		"ParameterValue": "dtqudagram"
+	},
+	{
+		"ParameterKey": "S3BucketName",
+		"ParameterValue": "dtq-udagram-bucket"
 	}
 ]
