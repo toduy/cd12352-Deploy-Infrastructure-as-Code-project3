@@ -1,5 +1,5 @@
 # Load Balancer DNS Name
-http://dtq-ud-loadb-wtzmbyird4ru-444491379.us-east-1.elb.amazonaws.com
+http://dtq-ud-loadb-aq770uvpvwjz-1057663481.us-east-1.elb.amazonaws.com/
 
 # infrastructure diagram
 Refer to file: project3_infrastructure_diagram.PNG
