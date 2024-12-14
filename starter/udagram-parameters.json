@@ -10,5 +10,17 @@
 	{
 		"ParameterKey": "S3BucketName",
 		"ParameterValue": "dtq-udagram-bucket"
+	},
+	{
+		"ParameterKey": "AWSDEFAULTREGION",
+		"ParameterValue": "us-east-1"
+	},
+	{
+		"ParameterKey": "AWSACCESSKEYID",
+		"ParameterValue": "xxx"
+	},
+	{
+		"ParameterKey": "AWSSECRETACCESSKEY",
+		"ParameterValue": "xxx"
 	}
 ]

@@ -11,7 +11,15 @@ Parameters:
   S3BucketName:
     Type: String
     Description: S3 bucket name
-
+  AWSDEFAULTREGION:
+    Type: String
+    Description: AWS DEFAULT REGION
+  AWSACCESSKEYID:
+    Type: String
+    Description: AWS ACCESS KEY ID
+  AWSSECRETACCESSKEY:
+    Type: String
+    Description: AWS SECRET ACCESS KEY
 Resources:
   # Add your resources here
   # EC 2 server as a bastion host
@@ -70,11 +78,24 @@ Resources:
           - !Ref SecurityGroup
         InstanceType: t2.micro
         UserData:
-          Fn::Base64: |
+          Fn::Base64: !Sub |
             #!/bin/bash
             apt-get update -y
-            sudo apt-get install nginx -y
+            sudo apt-get install nginx unzip -y
             service nginx start
+
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+
+            mkdir -p ~/.aws
+            echo "[default]" > ~/.aws/config
+            echo "region = ${AWSDEFAULTREGION}" >> ~/.aws/config
+            echo "[default]" > ~/.aws/credentials
+            echo "aws_access_key_id = ${AWSACCESSKEYID}" >> ~/.aws/credentials
+            echo "aws_secret_access_key = ${AWSSECRETACCESSKEY}" >> ~/.aws/credentials
+
+            aws s3 cp s3://${S3BucketName}/index.html /var/www/html/index.html
         IamInstanceProfile:
           Name: !Ref InstanceProfile
   AutoScalingGroup:
@@ -193,3 +214,9 @@ Resources:
       Path: '/'
       Roles:
       - !Ref IAMRole
+
+Outputs: 
+  LoadBalancerDNS: 
+    Description: Load balancer public
+    Value:
+      Fn::Join: ["", ["http://", !GetAtt LoadBalancer.DNSName]]
